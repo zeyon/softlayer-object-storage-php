@@ -3,7 +3,7 @@
 $objectStorageDirectory = dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'lib'. DIRECTORY_SEPARATOR . 'ObjectStorage';
 set_include_path(get_include_path() . PATH_SEPARATOR . $objectStorageDirectory);
 
-require_once($directory . 'Util.php');
+require_once($objectStorageDirectory . DIRECTORY_SEPARATOR . 'Util.php');
 
 class BaseTest extends PHPUnit_Framework_TestCase
 {
