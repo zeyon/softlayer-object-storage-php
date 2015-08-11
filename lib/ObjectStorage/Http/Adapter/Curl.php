@@ -15,6 +15,7 @@ class ObjectStorage_Http_Adapter_Curl implements ObjectStorage_Http_Adapter_Inte
     protected $connectTimeout = null;
     protected $requestHeaders = array();
     protected $fileHandler = null;
+    protected $downloadStream = null;
 
     public function __construct($options = array())
     {
@@ -73,6 +74,11 @@ class ObjectStorage_Http_Adapter_Curl implements ObjectStorage_Http_Adapter_Inte
         $this->fileHandler = $handler;
     }
 
+    public function setDownloadStream($handle)
+    {
+        $this->downloadStream = $handle;
+    }
+
     /**
      * (non-PHPdoc)
      * @see ObjectStorage_Http_Adapter_Interface::setMethod()
@@ -115,7 +121,6 @@ class ObjectStorage_Http_Adapter_Curl implements ObjectStorage_Http_Adapter_Inte
         // To get around CURL issue. http://curl.haxx.se/mail/lib-2010-08/0171.html
         $requestHeaders = implode("\r\n", $this->requestHeaders);
 
-        curl_setopt($curl, CURLOPT_HEADER, true);
         curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -165,6 +170,19 @@ class ObjectStorage_Http_Adapter_Curl implements ObjectStorage_Http_Adapter_Inte
             }
         }
 
+        $headers = array();
+
+        if (is_resource($this->downloadStream)) {
+            $useFileTarget = true;
+            curl_setopt($curl, CURLOPT_FILE, $this->downloadStream);
+
+            $headerManager = new ObjectStorage_Http_Adapter_CurlHeaderManager();
+            curl_setopt($curl, CURLOPT_HEADERFUNCTION, array($headerManager, 'callback'));
+        } else {
+            $useFileTarget = false;
+            curl_setopt($curl, CURLOPT_HEADER, true);
+        }
+
         $rawResponse = curl_exec($curl);
 
         if ($rawResponse === false) {
@@ -172,20 +190,28 @@ class ObjectStorage_Http_Adapter_Curl implements ObjectStorage_Http_Adapter_Inte
         }
 
         $curlInfo = curl_getinfo($curl);
-        $rawHeaders = substr($rawResponse, 0, $curlInfo['header_size']);
 
-        $headers = array();
-        if ($rawHeaders != '') {
-            $headerLines = explode("\n", $rawHeaders);
-            foreach ($headerLines as $line) {
-                $headerChunk = explode(': ', $line);
+        if ($useFileTarget) {
+            $body = $this->downloadStream;
+            $headers = $headerManager->headers;
 
-                if (count($headerChunk) == 2) {
-                    $headers[ucfirst(strtolower($headerChunk[0]))] = trim($headerChunk[1]);
+        } else {
+            $rawHeaders = substr($rawResponse, 0, $curlInfo['header_size']);
+
+            if ($rawHeaders != '') {
+                $headerLines = explode("\n", $rawHeaders);
+                foreach ($headerLines as $line) {
+                    $headerChunk = explode(': ', $line);
+
+                    if (count($headerChunk) == 2) {
+                        $headers[ucfirst(strtolower($headerChunk[0]))] = trim($headerChunk[1]);
+                    }
                 }
             }
+            $body = substr($rawResponse, $curlInfo['header_size']);
+
         }
-        $body = substr($rawResponse, $curlInfo['header_size']);
+
         $statusCode = $curlInfo['http_code'];
 
         curl_close($curl);
