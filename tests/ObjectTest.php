@@ -78,7 +78,7 @@ class ObjectTest extends BaseTest
                         ->setLocalFile(self::$localFileName)
                         ->create();
 
-            $this->assertInstanceOf('ObjectStorage_Abstract', $object, 'Failed to create new object: ' . $name);
+            $this->assertInstanceOf('ObjectStorage_Abstract', $object, 'Failed to create new object: ' . self::$copiedFileName);
         }
 
         $copiedObject = self::$objectStorage->with(self::$copiedFileName)->getInfo();
