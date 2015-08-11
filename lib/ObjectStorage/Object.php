@@ -11,6 +11,8 @@ class ObjectStorage_Object extends ObjectStorage_Abstract
 {
     protected $localFile = '';
 
+    protected $downloadStream = null;
+
     public static $skipOverwriteHeaders = array('ETAG', 'ACCEPT-RANGES', 'LAST-MODIFIED', 'DATE', 'CONNECTION', 'CONTENT-LENGTH');
 
     protected function getMetaPrefix()
@@ -113,6 +115,29 @@ class ObjectStorage_Object extends ObjectStorage_Abstract
     public function setLocalFile($path)
     {
         $this->localFile = $path;
+        return $this;
+    }
+
+    /**
+     * Returns the file handle to use to write the downloaded data to, or NULL.
+     *
+     * @return resource|null
+     */
+    public function getDownloadStream()
+    {
+        return $this->downloadStream;
+    }
+
+    /**
+     * Sets a file handle to use to write the downloaded data to.
+     *
+     * @param resource $handle
+     *
+     * @return ObjectStorage_Abstract
+     */
+    public function setDownloadStream($handle)
+    {
+        $this->downloadStream = $handle;
         return $this;
     }
 

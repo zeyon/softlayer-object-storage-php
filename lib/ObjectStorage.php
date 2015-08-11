@@ -293,6 +293,11 @@ class ObjectStorage
 
         $client->setUri($uri);
 
+        $downloadStream = $objectStorageObject->getDownloadStream();
+        if (is_resource($downloadStream)) {
+            $client->setDownloadStream($downloadStream);
+        }
+
         $headers = $objectStorageObject->getRequest()->getHeaders();
 
         if (count($headers) > 0) {
@@ -528,6 +533,11 @@ class ObjectStorage
 
             } else {
                 $client->setBody($objectStorageObject->getRequest()->getBody());
+            }
+
+            $downloadStream = $objectStorageObject->getDownloadStream();
+            if (is_resource($downloadStream)) {
+                $client->setDownloadStream($downloadStream);
             }
 
             if ($request->getHeader('Content-type') == '') {
